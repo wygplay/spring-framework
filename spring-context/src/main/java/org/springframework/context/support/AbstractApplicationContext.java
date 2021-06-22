@@ -873,6 +873,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		beanFactory.setTempClassLoader(null);
 
 		// Allow for caching all bean definition metadata, not expecting further changes.
+		// list转为string数组有什么好处？答：getBeanDefinitionNames返回的将是frozenBeanDefinitionNames的拷贝，而非beanDefinitionNames，即此方法执行后，修改beanDefinition将不会生效。
 		beanFactory.freezeConfiguration();
 
 		// Instantiate all remaining (non-lazy-init) singletons.

@@ -94,6 +94,7 @@ public abstract class FactoryBeanRegistrySupport extends DefaultSingletonBeanReg
 	 * @see org.springframework.beans.factory.FactoryBean#getObject()
 	 */
 	protected Object getObjectFromFactoryBean(FactoryBean<?> factory, String beanName, boolean shouldPostProcess) {
+		// 工厂中对象是单例时，先从缓存中读取对象（因为是单例的，可以使用缓存提高性能）
 		if (factory.isSingleton() && containsSingleton(beanName)) {
 			synchronized (getSingletonMutex()) {
 				Object object = this.factoryBeanObjectCache.get(beanName);
@@ -101,6 +102,8 @@ public abstract class FactoryBeanRegistrySupport extends DefaultSingletonBeanReg
 					object = doGetObjectFromFactoryBean(factory, beanName);
 					// Only post-process and store if not put there already during getObject() call above
 					// (e.g. because of circular reference processing triggered by custom getBean calls)
+					// 为什么getObject获取的bean不返回，却要从缓存中取呢？ 因为getBean的调用获取的bean可能需要post process处理，处理完成的bean跟初始的bean会不一致，
+					// 而doGetObjectFromFactoryBean并未涉及post-process，而缓存中存在就意味着bean已经完全处理完毕，可以直接拿来使用，而不用担心经bean不一致的情况
 					Object alreadyThere = this.factoryBeanObjectCache.get(beanName);
 					if (alreadyThere != null) {
 						object = alreadyThere;
@@ -113,6 +116,7 @@ public abstract class FactoryBeanRegistrySupport extends DefaultSingletonBeanReg
 							}
 							beforeSingletonCreation(beanName);
 							try {
+								// object经过后处理器处理，返回的object跟之前的是不同的对象（前提是经后处理器处理后）
 								object = postProcessObjectFromFactoryBean(object, beanName);
 							}
 							catch (Throwable ex) {
